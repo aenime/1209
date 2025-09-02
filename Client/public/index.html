@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Full App - Complete E-commerce Solution" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Cashfree Payment Gateway SDK - Multiple Sources with Fallback -->
+    <script>
+      // Cashfree SDK Loader with fallback mechanism
+      (function() {
+        let sdkLoaded = false;
+        let loadAttempts = 0;
+        const maxAttempts = 3;
+        
+        // Multiple SDK URLs to try (updated with working URLs)
+        const sdkUrls = [
+          'https://sdk.cashfree.com/js/ui/2.0.0/cashfree-js.production.js',
+          'https://sdk.cashfree.com/js/v3/cashfree.js',
+          'https://sdk.cashfree.com/js/v4/cashfree.js',
+          'https://sdk.cashfree.com/js/latest/cashfree.js', 
+          'https://sdk.cashfree.com/js/cashfree.js'
+        ];
+        
+        function loadCashfreeSDK(urlIndex = 0) {
+          if (sdkLoaded || loadAttempts >= maxAttempts) return;
+          
+          loadAttempts++;
+          const currentUrl = sdkUrls[urlIndex] || sdkUrls[0];
+          
+          console.log(`🔄 Loading Cashfree SDK (attempt ${loadAttempts}): ${currentUrl}`);
+          
+          const script = document.createElement('script');
+          script.src = currentUrl;
+          script.async = true;
+          
+          script.onload = function() {
+            sdkLoaded = true;
+            console.log('✅ Cashfree SDK loaded successfully');
+            
+            // Verify SDK is working
+            if (typeof window.Cashfree === 'function') {
+              console.log('✅ Cashfree SDK is ready and functional');
+              window.cashfreeSdkReady = true;
+            } else {
+              console.warn('⚠️ Cashfree SDK loaded but not functional');
+            }
+          };
+          
+          script.onerror = function() {
+            console.error(`❌ Failed to load Cashfree SDK from: ${currentUrl}`);
+            
+            // Try next URL
+            if (urlIndex + 1 < sdkUrls.length) {
+              setTimeout(() => loadCashfreeSDK(urlIndex + 1), 1000);
+            } else if (loadAttempts < maxAttempts) {
+              // Retry from first URL
+              setTimeout(() => loadCashfreeSDK(0), 2000);
+            } else {
+              console.error('❌ All Cashfree SDK load attempts failed. Payment will use server-side redirect.');
+              window.cashfreeSdkFailed = true;
+            }
+          };
+          
+          document.head.appendChild(script);
+        }
+        
+        // Start loading immediately
+        loadCashfreeSDK();
+        
+        // Fallback check after 10 seconds
+        setTimeout(() => {
+          if (!sdkLoaded && !window.cashfreeSdkFailed) {
+            console.warn('⚠️ Cashfree SDK load timeout. Will use server-side redirect for payments.');
+            window.cashfreeSdkFailed = true;
+          }
+        }, 10000);
+      })();
+    </script>
+    
+    <!-- Google Analytics 4 & Google Ads - Dynamic Implementation -->
+    <script>
+      // THROTTLE PROTECTION: Prevent Facebook Pixel IPC flooding
+      // This must run before any tracking scripts load
+      (function() {
+        // Throttle setInterval calls that are too aggressive (< 200ms)
+        const originalSetInterval = window.setInterval;
+        window.setInterval = function(callback, delay, ...args) {
+          // If delay is very short and looks like tracking detection
+          if (delay < 200 && (
+            callback.toString().includes('fbq') ||
+            callback.toString().includes('detectAndConfigureFB') ||
+            callback.toString().includes('facebook') ||
+            callback.toString().includes('pixel') ||
+            callback.toString().includes('gtag')
+          )) {
+            console.log('🛡️ Throttling aggressive tracking interval from', delay, 'ms to 500ms');
+            delay = 500; // Increase to 500ms minimum
+          }
+          return originalSetInterval.call(this, callback, delay, ...args);
+        };
+      })();
+      
+      // Suppress Google Analytics/Ads network errors in console
+      const originalConsoleError = console.error;
+      const originalConsoleWarn = console.warn;
+      const originalConsoleLog = console.log;
+      
+      console.error = function(...args) {
+        const message = args.join(' ');
+        // Filter out Google Analytics/Ads network errors
+        if (message.includes('google.com/ccm/collect') || 
+            message.includes('google-analytics.com') ||
+            message.includes('googletagmanager.com') ||
+            (message.includes('Fetch failed loading') && message.includes('google'))) {
+          return; // Suppress these errors
+        }
+        originalConsoleError.apply(console, args);
+      };
+      
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        // Filter out fetch and XHR related warnings
+        if (message.includes('Fetch finished loading') || 
+            message.includes('Fetch failed loading') ||
+            message.includes('XHR finished loading') ||
+            message.includes('XHR failed loading')) {
+          return; // Suppress these warnings
+        }
+        originalConsoleWarn.apply(console, args);
+      };
+      
+      console.log = function(...args) {
+        const message = args.join(' ');
+        // Filter out fetch-related logs and XHR logs
+        if (message.includes('Fetch finished loading') || 
+            message.includes('Fetch failed loading') ||
+            message.includes('XHR finished loading') ||
+            message.includes('XHR failed loading') ||
+            (message.includes('GET') && message.includes('api/env-config/current')) ||
+            (message.includes('GET') && message.includes('api/slider/get')) ||
+            (message.includes('GET') && message.includes('api/products/get'))) {
+          return; // Suppress these logs
+        }
+        originalConsoleLog.apply(console, args);
+      };
+
+      // Initialize dataLayer immediately
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // Load configuration dynamically from your database
+      window.loadGoogleTags = function() {
+        // This will be called after your envConfig loads
+        fetch('/api/env-config/current')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.data) {
+              const config = data.data;
+              const ga4Id = config.REACT_APP_G4;
+              const awId = config.REACT_APP_AW;
+              const fbPixelId = config.REACT_APP_FBPIXEL;
+              
+              // Load Google Analytics if ID is valid
+              if (ga4Id && ga4Id.startsWith('G-') && ga4Id.length > 10) {
+                const gaScript = document.createElement('script');
+                gaScript.async = true;
+                gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${ga4Id}`;
+                document.head.appendChild(gaScript);
+                
+                gaScript.onload = function() {
+                  gtag('config', ga4Id, {
+                    send_page_view: false // Let tracking manager handle this
+                  });
+                };
+              }
+              
+              // Load Google Ads if ID is valid  
+              if (awId && awId.startsWith('AW-') && awId.length > 10) {
+                // Load Google Ads script with the dynamic ID
+                if (!document.querySelector(`script[src*="${awId}"]`)) {
+                  const awScript = document.createElement('script');
+                  awScript.async = true;
+                  awScript.src = `https://www.googletagmanager.com/gtag/js?id=${awId}`;
+                  document.head.appendChild(awScript);
+                  
+                  awScript.onload = function() {
+                    gtag('config', awId);
+                  };
+                }
+              }
+              
+              // Facebook Pixel initialization is now handled by FacebookPixelManager.js
+              // This eliminates duplicate initialization warnings
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Could not load tracking config from database - no fallback used');
+            console.log('Use the admin panel at /env to configure tracking IDs');
+          });
+      };
+      
+      // Load tags immediately
+      window.loadGoogleTags();
+      
+      // Suppress network-level Google Analytics/Ads errors and fetch logs
+      window.addEventListener('error', function(event) {
+        if (event.target && event.target.src && 
+            (event.target.src.includes('google.com') || 
+             event.target.src.includes('googletagmanager.com') ||
+             event.target.src.includes('google-analytics.com'))) {
+          event.preventDefault();
+          return false;
+        }
+      }, true);
+      
+      // Override browser's fetch and XHR logging (Chrome DevTools specific)
+      if (typeof window.chrome !== 'undefined') {
+        // Attempt to suppress Chrome's fetch logging
+        try {
+          const originalFetch = window.fetch;
+          window.fetch = function(...args) {
+            const result = originalFetch.apply(this, args);
+            // Don't let Chrome log these specific requests
+            if (args[0] && (args[0].includes('/api/env-config/current') ||
+                          args[0].includes('/api/slider/get') ||
+                          args[0].includes('/api/products/get'))) {
+              // Silently handle the promise to prevent logging
+              result.catch(() => {}); // Prevent unhandled rejection logs
+            }
+            return result;
+          };
+          
+          // Override XMLHttpRequest to suppress logging
+          const originalXHROpen = XMLHttpRequest.prototype.open;
+          const originalXHRSend = XMLHttpRequest.prototype.send;
+          
+          XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            this._url = url;
+            return originalXHROpen.call(this, method, url, ...args);
+          };
+          
+          XMLHttpRequest.prototype.send = function(...args) {
+            // Suppress console logging for specific API endpoints
+            if (this._url && (this._url.includes('/api/slider/get') ||
+                            this._url.includes('/api/products/get') ||
+                            this._url.includes('/api/env-config/current'))) {
+              this._suppressLogging = true;
+            }
+            return originalXHRSend.apply(this, args);
+          };
+          
+        } catch (e) {
+          // Ignore if we can't override fetch/XHR
+        }
+      }
+    </script>
+    
+    <title>E-commerce</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

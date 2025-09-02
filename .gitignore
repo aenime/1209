@@ -1,0 +1,255 @@
+# ===================================
+# 🛍️ FullApp E-commerce .gitignore
+# ===================================
+
+# ===================================
+# 📦 Dependencies & Package Managers
+# ===================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+.yarn/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ===================================
+# 🏗️ Build Output & Distribution
+# ===================================
+# React build output
+Client/build/
+Client/dist/
+Client/out/
+
+# Server build output
+Server/build/
+Server/dist/
+Server/public/
+
+# Static assets
+/build
+/dist
+
+# ===================================
+# 🔐 Environment Variables & Secrets
+# ===================================
+# Main environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.backup
+
+# API keys and secrets
+.env.keys
+secrets.json
+config/secrets.js
+
+# ===================================
+# 📊 Logs & Debug Files
+# ===================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# PM2 logs
+ecosystem.config.js.backup
+pm2.log
+
+# ===================================
+# 🔄 Runtime & Process Files
+# ===================================
+*.pid
+*.seed
+*.pid.lock
+.lock-wscript
+
+# ===================================
+# 🧪 Testing & Coverage
+# ===================================
+coverage/
+.nyc_output/
+.coverage/
+*.lcov
+test-results/
+junit.xml
+
+# ===================================
+# 🛠️ IDE & Editor Files
+# ===================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-*
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ===================================
+# 💻 Operating System Files
+# ===================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ===================================
+# 🗂️ Temporary & Cache Files
+# ===================================
+.tmp/
+*.tmp
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# npm cache
+.npm/
+.eslintcache
+
+# Yarn cache
+.yarn-integrity
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ===================================
+# 🚀 Deployment & DevOps
+# ===================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.k8s.yml
+*.k8s.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# ===================================
+# 📱 Mobile & React Native
+# ===================================
+# React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# ===================================
+# 🗄️ Database & Storage
+# ===================================
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# MongoDB
+*.mongodb
+
+# Database dumps
+*.sql
+*.dump
+
+# ===================================
+# 📈 Analytics & Monitoring
+# ===================================
+# Bundle analyzer
+bundle-report.html
+webpack-bundle-analyzer-report.html
+
+# Performance monitoring
+.clinic/
+clinic.html
+
+# ===================================
+# 🔧 Miscellaneous
+# ===================================
+# Lock files for different scenarios
+*.lock
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Certificate files
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+
+# ===================================
+# 🛡️ Security & Sensitive Data
+# ===================================
+# SSH keys
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# GPG keys
+*.gpg
+*.asc
+
+# Application specific sensitive files
+config/production.json
+config/staging.json

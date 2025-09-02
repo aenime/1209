@@ -1,0 +1,43 @@
+{
+  "name": "fullapp-ecommerce",
+  "version": "1.0.0",
+  "description": "Full-stack e-commerce application with React frontend and Node.js backend",
+  "main": "Server/index.js",
+  "scripts": {
+    "start": "cd Server && node index.js",
+    "build": "cd Server && npm install && cd ../Client && npm install && npm run build",
+    "postinstall": "cd Server && npm install && cd ../Client && npm install",
+    "dev": "concurrently \"cd Server && NODE_ENV=development npm run dev\" \"cd Client && npm start\"",
+    "dev-prod": "npm run build-client && cd Server && NODE_ENV=production npm start",
+    "dev-like-prod": "npm run build-client && npm run serve-client",
+    "build-client": "cd Client && npm run build",
+    "serve-client": "cd Client && npx serve -s build -l 3000",
+    "install-all": "npm install && cd Client && npm install && cd ../Server && npm install",
+    "clean-install": "rm -rf node_modules Client/node_modules Server/node_modules && npm run install-all",
+    "debug-build": "echo '🔍 Installing Server dependencies...' && cd Server && npm install && echo '✅ Server deps installed' && echo '🔍 Installing Client dependencies...' && cd ../Client && npm install && echo '✅ Client deps installed' && echo '🔍 Building Client...' && npm run build && echo '✅ Build complete'"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mongoose": "^8.16.3"
+  },
+  "keywords": [
+    "react",
+    "node",
+    "express",
+    "mongodb",
+    "ecommerce"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "axios": "^1.10.0",
+    "chalk": "^5.4.1"
+  }
+}

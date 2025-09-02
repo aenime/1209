@@ -1,0 +1,29 @@
+/* Lightweight grid flash prevention - optimized for scroll performance */
+.product-grid-container {
+    /* Simple grid without heavy optimizations */
+    display: grid;
+    gap: 1rem;
+    
+    /* Minimal flash prevention */
+    transition: none !important;
+}
+
+.product-grid-container > * {
+    /* Prevent animations during updates only */
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Light scroll optimization - only when needed */
+.product-grid-smooth-scroll {
+    transform: translateZ(0);
+}
+
+/* Prevent flicker during DOM updates */
+.product-grid-updating {
+    pointer-events: none;
+}
+
+.product-grid-stable {
+    pointer-events: auto;
+}
