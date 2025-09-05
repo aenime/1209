@@ -1,78 +1,90 @@
 /**
- * Enhanced Cashfree Payment Controller
+ * Enhanced Cashfree Payment Controller - New SDK Implementation
  * 
- * This controller provides a robust implementation of Cashfree Payment Gateway integration
- * with comprehensive error handling, data validation, and proper API v4 support.
+ * This controller provides the new Cashfree Node.js SDK implementation
+ * following the official documentation with 100% API compatibility with PHP version.
  * 
  * Features:
- * - Complete Cashfree Order Creation API v4 implementation
- * - Enhanced error handling and validation
- * - Server-side redirect solution for payment URLs
- * - Webhook handling for payment notifications
- * - Comprehensive debug endpoints for troubleshooting
- * - Auto-detection of URLs for different environments
+ * - Official Cashfree Node.js SDK integration
+ * - Same authentication method as PHP (headers + credentials)
+ * - Same API endpoints (production/sandbox URLs)
+ * - Same request structure (JSON payload)
+ * - Same response format (payment link extraction)
+ * - Same error handling (try/catch + logging)
+ * - Same environment configuration (.env variables)
  */
 
-const CashfreeOrderService = require('../services/payment/CashfreeOrderService');
+// Import the new Cashfree service class
+const NewCashfreeService = require('../services/payment/NewCashfreeService.js');
 
 class EnhancedPaymentController {
   /**
-   * Create Payment Order
-   * 
-   * Creates a new payment order using Cashfree Payment Gateway API v4.
-   * Handles comprehensive validation, error handling, and environment detection.
+   * Create Payment Order using New Cashfree SDK
+   * Same as PHP create_order.php - maintains 100% API compatibility
    */
   static async createOrder(req, res) {
     try {
-      const orderData = req.body;
+      const { amount, customerName, customerEmail, customerPhone } = req.body;
       
-      // Basic validation
-      if (!orderData.amount || !orderData.customer) {
+      // Same validation as PHP
+      if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'MISSING_REQUIRED_FIELDS',
-            message: 'Missing required fields: amount and customer details',
-            fields: ['amount', 'customer']
-          }
+          error: 'Invalid or missing amount.',
+          code: 'INVALID_AMOUNT'
         });
       }
 
-      // Auto-detect server URL for return/notify URLs
-      const serverUrl = EnhancedPaymentController.getServerUrl(req);
+      // Same order creation logic as PHP
+      const service = new NewCashfreeService();
+      const paymentResult = await service.createCashfreeOrder({
+        orderId: 'ORDER_' + Date.now(),
+        orderAmount: parseFloat(amount),
+        customerName: customerName || "John Doe",
+        customerEmail: customerEmail || "john.doe@example.com",
+        customerPhone: customerPhone || "9999999999"
+      });
       
-      // Create order using the enhanced service
-      const result = await CashfreeOrderService.createOrder(orderData, serverUrl);
-      
-      if (result.success) {
-        // Log successful order creation
-        console.log(`✅ Order created successfully: ${result.data.order_id}`);
+            // Same JSON response structure as PHP
+      if (paymentResult.success && paymentResult.payment_link) {
+        console.log(`✅ Order created successfully with payment link`);
         
-        res.status(200).json(result);
+        res.json({
+          status: 'success',
+          data: {
+            payment_link: paymentResult.payment_link,
+            payment_session_id: paymentResult.payment_session_id,
+            order_id: paymentResult.order_id,
+            cf_order_id: paymentResult.cf_order_id,
+            order_status: paymentResult.order_status,
+            environment: paymentResult.environment,
+            order_token: paymentResult.order_token
+          },
+          success: true
+        });
       } else {
-        // Handle API errors with proper status codes
-        const statusCode = result.error.status || 400;
-        console.error(`❌ Order creation failed: ${result.error.message}`);
+        console.log(`❌ Order creation failed:`, paymentResult);
         
-        res.status(statusCode).json(result);
+        res.status(400).json({
+          status: 'error',
+          message: paymentResult.message || 'Failed to create payment order',
+          success: false
+        });
       }
-      
     } catch (error) {
       console.error('❌ Create order controller error:', error);
       
-      res.status(500).json({
-        success: false,
-        error: {
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'An unexpected error occurred',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        }
+      // Same error response as PHP
+      res.json({
+        status: 'error',
+        message: 'An unexpected server error occurred. Please try again.',
+        details: error.message
       });
     }
   }
 
   /**
-   * Verify Payment Status
+   * Verify Payment Status using New SDK
    */
   static async verifyPayment(req, res) {
     try {
@@ -81,20 +93,21 @@ class EnhancedPaymentController {
       if (!orderId) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'MISSING_ORDER_ID',
-            message: 'Order ID is required'
-          }
+          error: 'Order ID is required'
         });
       }
       
-      const result = await CashfreeOrderService.verifyPayment(orderId);
+      // Use new SDK verification
+      const result = await verifyPayment(orderId);
       
       if (result.success) {
         res.status(200).json({
           success: true,
           status: result.status,
           isPaid: result.isPaid,
+          isActive: result.isActive,
+          isExpired: result.isExpired,
+          isTerminated: result.isTerminated,
           order: result.data
         });
       } else {
@@ -107,29 +120,30 @@ class EnhancedPaymentController {
       console.error('❌ Verify payment error:', error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'VERIFICATION_ERROR',
-          message: 'Payment verification failed',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        }
+        error: 'Payment verification failed',
+        message: error.message
       });
     }
   }
 
   /**
-   * Get Payment Configuration
-   * Returns non-sensitive configuration for frontend
+   * Get Payment Configuration using New SDK
    */
   static async getPaymentConfig(req, res) {
     try {
-      const config = await CashfreeOrderService.getConfig();
+      // Check if new Cashfree SDK is properly configured
+      const isConfigured = !!(
+        process.env.CASHFREE_APP_ID && 
+        process.env.CASHFREE_SECRET_KEY
+      );
       
       res.status(200).json({
         success: true,
-        enabled: config.enabled,
-        environment: config.environment,
-        isConfigured: !!(config.enabled && config.clientId && config.clientSecret),
-        apiVersion: '2025-01-01'
+        enabled: isConfigured,
+        environment: process.env.CASHFREE_ENVIRONMENT || 'sandbox',
+        isConfigured: isConfigured,
+        apiVersion: '2022-01-01', // Using same API version as PHP
+        sdkType: 'nodejs-official'
       });
     } catch (error) {
       // Return safe defaults if configuration fails
@@ -144,45 +158,54 @@ class EnhancedPaymentController {
   }
 
   /**
-   * Test Cashfree Configuration
-   * Validates credentials by making a test API call
+   * Test New Cashfree SDK Configuration
    */
   static async testCashfreeConfig(req, res) {
     try {
-      const { clientId, clientSecret, environment } = req.body;
+      const { appId, secretKey, environment } = req.body;
       
-      if (!clientId || !clientSecret) {
+      if (!appId || !secretKey) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'MISSING_CREDENTIALS',
-            message: 'Client ID and Secret are required'
-          }
+          error: 'App ID and Secret Key are required'
         });
       }
 
       // Temporarily set environment variables for testing
-      const originalClientId = process.env.CASHFREE_CLIENT_ID;
-      const originalClientSecret = process.env.CASHFREE_CLIENT_SECRET;
+      const originalAppId = process.env.CASHFREE_APP_ID;
+      const originalSecretKey = process.env.CASHFREE_SECRET_KEY;
       const originalEnvironment = process.env.CASHFREE_ENVIRONMENT;
 
-      process.env.CASHFREE_CLIENT_ID = clientId;
-      process.env.CASHFREE_CLIENT_SECRET = clientSecret;
+      process.env.CASHFREE_APP_ID = appId;
+      process.env.CASHFREE_SECRET_KEY = secretKey;
       process.env.CASHFREE_ENVIRONMENT = environment || 'sandbox';
 
       try {
-        const result = await CashfreeOrderService.testConnection();
+        // Test with a minimal order using new SDK
+        const testPaymentLink = await createCashfreeOrder(
+          1.00,
+          "Test Customer",
+          "test@example.com",
+          "9999999999"
+        );
         
-        res.status(200).json({
-          success: result.success,
-          message: result.message,
-          environment: result.environment,
-          error: result.error
-        });
+        if (testPaymentLink && testPaymentLink.startsWith('http')) {
+          res.json({
+            success: true,
+            message: 'New Cashfree SDK configuration is working',
+            environment: environment || 'sandbox'
+          });
+        } else {
+          res.json({
+            success: false,
+            message: 'Configuration test failed',
+            error: testPaymentLink
+          });
+        }
       } finally {
         // Restore original environment variables
-        process.env.CASHFREE_CLIENT_ID = originalClientId;
-        process.env.CASHFREE_CLIENT_SECRET = originalClientSecret;
+        process.env.CASHFREE_APP_ID = originalAppId;
+        process.env.CASHFREE_SECRET_KEY = originalSecretKey;
         process.env.CASHFREE_ENVIRONMENT = originalEnvironment;
       }
 
@@ -191,17 +214,13 @@ class EnhancedPaymentController {
       
       res.status(400).json({
         success: false,
-        error: {
-          code: 'CONFIG_TEST_FAILED',
-          message: error.message || 'Configuration test failed'
-        }
+        error: error.message || 'Configuration test failed'
       });
     }
   }
 
   /**
-   * Handle Payment Return from Cashfree
-   * Processes the return URL callback from Cashfree after payment
+   * Handle Payment Return using New SDK
    */
   static async handlePaymentReturn(req, res) {
     try {
@@ -213,8 +232,8 @@ class EnhancedPaymentController {
         return res.redirect(`${clientUrl}/cart?error=missing_order_id`);
       }
       
-      // Verify payment status with Cashfree
-      const verificationResult = await CashfreeOrderService.verifyPayment(orderId);
+      // Verify payment status with new Cashfree SDK
+      const verificationResult = await verifyPayment(orderId);
       
       const clientUrl = EnhancedPaymentController.getClientUrl(req);
       
@@ -226,7 +245,7 @@ class EnhancedPaymentController {
       } else {
         // Payment failed or pending - redirect to cart with error
         const errorUrl = `${clientUrl}/cart?error=payment_failed&order_id=${orderId}`;
-        console.log(`❌ Payment failed for order: ${orderId}`);
+        console.log(`❌ Payment failed for order: ${orderId} - Status: ${verificationResult.status}`);
         res.redirect(errorUrl);
       }
       
@@ -240,25 +259,45 @@ class EnhancedPaymentController {
   }
 
   /**
-   * Server-side Checkout Redirect
-   * Handles the redirect to Cashfree payment page
+   * Server-side Checkout Redirect using New SDK
    */
   static async handleCashfreeCheckout(req, res) {
     try {
       const { orderId } = req.params;
       
+      console.log('🚀 CASHFREE CHECKOUT HANDLER - UPDATED VERSION CALLED!');
+      console.log('📝 OrderId received:', orderId, 'Length:', orderId.length);
+      
       if (!orderId) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'MISSING_ORDER_ID',
-            message: 'Order ID is required'
-          }
+          error: 'Order ID is required'
         });
       }
       
-      // Get order details from Cashfree
-      const orderResult = await CashfreeOrderService.getOrderDetails(orderId);
+      console.log('🔍 Checking orderId:', orderId, 'Length:', orderId.length);
+      
+      // Check if this is a payment session ID (shorter) or order ID (longer)
+      const isSessionId = orderId.length <= 20; // Session IDs are typically 20 chars or less
+      
+      console.log('🔍 Is session ID?', isSessionId);
+      
+      if (isSessionId) {
+        // This is a payment session ID, use it directly for checkout
+        const isProduction = process.env.CASHFREE_ENVIRONMENT === 'PRODUCTION';
+        const baseUrl = isProduction 
+          ? 'https://api.cashfree.com/pg/view/sessions/checkout/web'
+          : 'https://api-test.cashfree.com/pg/view/sessions/checkout/web';
+        
+        const checkoutUrl = `${baseUrl}/${orderId}`;
+        console.log('✅ Using session ID for direct checkout:', checkoutUrl);
+        
+        return res.redirect(checkoutUrl);
+      }
+      
+      // If it's an order ID, try to get order details using new SDK
+      const service = new NewCashfreeService();
+      const orderResult = await service.getOrderDetails(orderId);
       
       if (!orderResult.success || !orderResult.data.payment_session_id) {
         throw new Error('Payment session not found or order invalid');
@@ -266,17 +305,17 @@ class EnhancedPaymentController {
 
       const orderData = orderResult.data;
       
-      // Determine Cashfree environment URLs
-      const isProduction = orderData.environment === 'production';
+      // Determine Cashfree environment URLs based on new SDK
+      const isProduction = process.env.CASHFREE_ENVIRONMENT === 'PRODUCTION';
       const baseUrl = isProduction 
         ? 'https://payments.cashfree.com'
         : 'https://payments-test.cashfree.com';
       
-      // Multiple URL formats for maximum compatibility with Cashfree 2025 API
+      // Updated URL formats for 2022-01-01 API version (same as PHP)
       const redirectUrls = [
         `${baseUrl}/checkout/${orderData.payment_session_id}`,
-        `${baseUrl}/payments/v4/checkout?session_id=${orderData.payment_session_id}`,
-        `${baseUrl}/pgappnew/checkout?session_id=${orderData.payment_session_id}`
+        `${baseUrl}/pgappnew/checkout?session_id=${orderData.payment_session_id}`,
+        `${baseUrl}/billpay/checkout/post/submit?payment_session_id=${orderData.payment_session_id}`
       ];
       
       // Generate professional redirect page
@@ -381,7 +420,8 @@ class EnhancedPaymentController {
               <div class="order-info">
                 <strong>Order ID:</strong> ${orderId}<br>
                 <strong>Amount:</strong> ₹${orderData.order_amount}<br>
-                <strong>Environment:</strong> ${isProduction ? 'Production' : 'Sandbox'}
+                <strong>Environment:</strong> ${isProduction ? 'Production' : 'Sandbox'}<br>
+                <strong>API Version:</strong> 2022-01-01 (Same as PHP)
               </div>
 
               <div class="security-info">
@@ -406,11 +446,8 @@ class EnhancedPaymentController {
       console.error('❌ Cashfree checkout error:', error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'CHECKOUT_REDIRECT_FAILED',
-          message: error.message,
-          details: 'Failed to redirect to payment gateway'
-        }
+        error: 'Failed to redirect to payment gateway',
+        message: error.message
       });
     }
   }
@@ -521,17 +558,39 @@ class EnhancedPaymentController {
   }
 
   /**
-   * Debug: Test API Connection
+   * Debug: Test API Connection using New SDK
    */
   static async debugApiConnection(req, res) {
     try {
-      const result = await CashfreeOrderService.testConnection();
-      res.json(result);
+      // Test with a minimal order using new SDK
+      const testPaymentLink = await createCashfreeOrder(
+        1.00,
+        "API Test Customer",
+        "test@example.com",
+        "9999999999"
+      );
+      
+      if (testPaymentLink && testPaymentLink.startsWith('http')) {
+        res.json({
+          success: true,
+          status: 'New Cashfree SDK API connection successful',
+          testPaymentLink: testPaymentLink,
+          environment: process.env.CASHFREE_ENVIRONMENT || 'sandbox',
+          apiVersion: '2022-01-01'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          status: 'API connection failed',
+          error: testPaymentLink
+        });
+      }
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: 'Failed to test API connection',
-        message: error.message
+        error: 'Failed to test API connection with new SDK',
+        message: error.message,
+        details: error.response?.data || error.stack
       });
     }
   }

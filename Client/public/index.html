@@ -8,77 +8,41 @@
     <meta name="description" content="Full App - Complete E-commerce Solution" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
-    <!-- Cashfree Payment Gateway SDK - Multiple Sources with Fallback -->
+    <!-- Cashfree Payment Gateway SDK v4 - Production Ready -->
+    <script src="https://sdk.cashfree.com/js/v4/cashfree.js" defer></script>
     <script>
-      // Cashfree SDK Loader with fallback mechanism
-      (function() {
-        let sdkLoaded = false;
-        let loadAttempts = 0;
-        const maxAttempts = 3;
+      // Cashfree SDK v4 Initialization
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔄 Initializing Cashfree SDK v4...');
         
-        // Multiple SDK URLs to try (updated with working URLs)
-        const sdkUrls = [
-          'https://sdk.cashfree.com/js/ui/2.0.0/cashfree-js.production.js',
-          'https://sdk.cashfree.com/js/v3/cashfree.js',
-          'https://sdk.cashfree.com/js/v4/cashfree.js',
-          'https://sdk.cashfree.com/js/latest/cashfree.js', 
-          'https://sdk.cashfree.com/js/cashfree.js'
-        ];
-        
-        function loadCashfreeSDK(urlIndex = 0) {
-          if (sdkLoaded || loadAttempts >= maxAttempts) return;
+        // Wait for SDK to be available
+        function waitForCashfree() {
+          if (typeof window.Cashfree === 'function') {
+            console.log('✅ Cashfree SDK v4 is ready and functional');
+            window.cashfreeSdkReady = true;
+            return;
+          }
           
-          loadAttempts++;
-          const currentUrl = sdkUrls[urlIndex] || sdkUrls[0];
+          // Keep checking for up to 10 seconds
+          const maxAttempts = 50;
+          let attempts = 0;
           
-          console.log(`🔄 Loading Cashfree SDK (attempt ${loadAttempts}): ${currentUrl}`);
-          
-          const script = document.createElement('script');
-          script.src = currentUrl;
-          script.async = true;
-          
-          script.onload = function() {
-            sdkLoaded = true;
-            console.log('✅ Cashfree SDK loaded successfully');
+          const checkInterval = setInterval(() => {
+            attempts++;
             
-            // Verify SDK is working
             if (typeof window.Cashfree === 'function') {
-              console.log('✅ Cashfree SDK is ready and functional');
+              console.log('✅ Cashfree SDK v4 loaded successfully');
               window.cashfreeSdkReady = true;
-            } else {
-              console.warn('⚠️ Cashfree SDK loaded but not functional');
+              clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+              console.warn('⚠️ Cashfree SDK load timeout. Will use server-side redirect for payments.');
+              clearInterval(checkInterval);
             }
-          };
-          
-          script.onerror = function() {
-            console.error(`❌ Failed to load Cashfree SDK from: ${currentUrl}`);
-            
-            // Try next URL
-            if (urlIndex + 1 < sdkUrls.length) {
-              setTimeout(() => loadCashfreeSDK(urlIndex + 1), 1000);
-            } else if (loadAttempts < maxAttempts) {
-              // Retry from first URL
-              setTimeout(() => loadCashfreeSDK(0), 2000);
-            } else {
-              console.error('❌ All Cashfree SDK load attempts failed. Payment will use server-side redirect.');
-              window.cashfreeSdkFailed = true;
-            }
-          };
-          
-          document.head.appendChild(script);
+          }, 200);
         }
         
-        // Start loading immediately
-        loadCashfreeSDK();
-        
-        // Fallback check after 10 seconds
-        setTimeout(() => {
-          if (!sdkLoaded && !window.cashfreeSdkFailed) {
-            console.warn('⚠️ Cashfree SDK load timeout. Will use server-side redirect for payments.');
-            window.cashfreeSdkFailed = true;
-          }
-        }, 10000);
-      })();
+        waitForCashfree();
+      });
     </script>
     
     <!-- Google Analytics 4 & Google Ads - Dynamic Implementation -->

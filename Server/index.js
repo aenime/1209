@@ -292,7 +292,10 @@ app.use('/api/env-config', envConfigRoute);
 app.use('/api/env-auth', envAuthRoute);
 app.use('/api/pincode', pincodeRoute);
 app.use('/api/payment', paymentRoute);
-app.use('/api/payment-enhanced', enhancedPaymentRoute);
+app.use('/api/enhanced-payment', enhancedPaymentRoute); // New Cashfree SDK routes
+
+// Legacy route compatibility for frontend
+app.use('/api/payment-enhanced', enhancedPaymentRoute); // For backward compatibility with frontend
 
 // Product and Slider routes  
 require("./routes/Products.route")(app);

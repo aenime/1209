@@ -1,17 +1,18 @@
 /**
- * Enhanced Payment Routes
+ * Enhanced Payment Routes - New Cashfree SDK Implementation
  * 
- * Provides comprehensive routing for Cashfree Payment Gateway integration
- * with enhanced error handling, validation, and debug capabilities.
+ * Provides comprehensive routing for the new Cashfree Node.js SDK integration
+ * following the official documentation with 100% API compatibility with PHP version.
  */
 
 const express = require('express');
 const EnhancedPaymentController = require('../Controller/EnhancedPaymentController');
+const { createCashfreeOrder } = require('../services/payment/NewCashfreeService');
 const router = express.Router();
 
 // Middleware to log all payment API requests
 router.use((req, res, next) => {
-  console.log(`🔄 Payment API: ${req.method} ${req.path}`, {
+  console.log(`🔄 Enhanced Payment API (New SDK): ${req.method} ${req.path}`, {
     timestamp: new Date().toISOString(),
     ip: req.ip || req.connection.remoteAddress,
     userAgent: req.get('User-Agent')
@@ -19,50 +20,113 @@ router.use((req, res, next) => {
   next();
 });
 
-// Core Payment APIs
-// ===================
+// Same routes as PHP implementation for compatibility
+// ===================================================
 
 /**
- * GET /api/payment/config
- * Get payment gateway configuration (non-sensitive)
+ * GET /api/enhanced-payment/payment_cashfree?amount=100
+ * Same route as PHP payment_cashfree.php
+ */
+router.get('/payment_cashfree', async (req, res) => {
+  try {
+    const amount = req.query.amount;
+
+    // Same validation as PHP
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+      return res.status(400).send('Invalid or missing amount.');
+    }
+
+    // Same order creation logic as PHP
+    const paymentLink = await createCashfreeOrder(parseFloat(amount));
+    
+    if (paymentLink && paymentLink.startsWith('http')) {
+      // Same redirect behavior as PHP
+      res.redirect(paymentLink);
+    } else {
+      res.status(500).send('Failed to create Cashfree order: ' + paymentLink);
+    }
+  } catch (error) {
+    console.error('Payment redirect error:', error);
+    res.status(500).send('Internal server error');
+  }
+});
+
+/**
+ * GET /api/enhanced-payment/create_order?amount=100&name=John&email=john@example.com&phone=9999999999
+ * Same JSON API as PHP create_order.php
+ */
+router.get('/create_order', async (req, res) => {
+  const amount = parseFloat(req.query.amount) || 100.00;
+  const customerName = req.query.name || "John Doe";
+  const customerEmail = req.query.email || "john.doe@example.com";
+  const customerPhone = req.query.phone || "9999999999";
+
+  try {
+    const paymentLink = await createCashfreeOrder(amount, customerName, customerEmail, customerPhone);
+    
+    // Same JSON response structure as PHP
+    if (paymentLink && paymentLink.startsWith('http')) {
+      res.json({
+        status: 'success',
+        payment_link: paymentLink
+      });
+    } else {
+      res.json({
+        status: 'error',
+        message: 'Failed to create order. ' + paymentLink
+      });
+    }
+  } catch (error) {
+    // Same error response as PHP
+    res.json({
+      status: 'error',
+      message: 'An unexpected server error occurred. Please try again.',
+      details: error.message
+    });
+  }
+});
+
+// Enhanced APIs using new SDK
+// ===========================
+
+/**
+ * GET /api/enhanced-payment/config
+ * Get payment gateway configuration (non-sensitive) using new SDK
  */
 router.get('/config', EnhancedPaymentController.getPaymentConfig);
 
 /**
- * POST /api/payment/create-order
- * Create a new payment order with Cashfree
- * 
- * Body:
- * {
- *   "amount": 100.00,
- *   "customer": {
- *     "customer_phone": "9999999999",
- *     "customer_email": "user@example.com",
- *     "customer_name": "John Doe"
- *   },
- *   "order_currency": "INR",
- *   "orderNote": "Payment for order",
- *   "cart_details": {...}
- * }
+ * POST /api/enhanced-payment/create-order
+ * Create a new payment order with new Cashfree SDK
  */
 router.post('/create-order', EnhancedPaymentController.createOrder);
 
 /**
- * GET /api/payment/verify/:orderId
- * Verify payment status for an order
+ * GET /api/enhanced-payment/create-order (Frontend compatibility)
+ * Same endpoint as POST but for GET requests from frontend
+ */
+router.get('/create-order', (req, res) => {
+  // Transform query params to body format expected by controller
+  req.body = {
+    amount: req.query.amount,
+    customerName: req.query.name || req.query.customerName,
+    customerEmail: req.query.email || req.query.customerEmail,
+    customerPhone: req.query.phone || req.query.customerPhone
+  };
+  
+  // Call the same controller method
+  EnhancedPaymentController.createOrder(req, res);
+});
+
+/**
+ * GET /api/enhanced-payment/verify/:orderId
+ * Verify payment status using new SDK
  */
 router.get('/verify/:orderId', EnhancedPaymentController.verifyPayment);
 
 /**
- * POST /api/payment/test-config
- * Test Cashfree configuration with provided credentials
- * 
- * Body:
- * {
- *   "clientId": "your_client_id",
- *   "clientSecret": "your_client_secret",
- *   "environment": "sandbox"
- * }
+ * POST /api/enhanced-payment/test-config
+ * Test new Cashfree SDK configuration
  */
 router.post('/test-config', EnhancedPaymentController.testCashfreeConfig);
 
@@ -70,64 +134,64 @@ router.post('/test-config', EnhancedPaymentController.testCashfreeConfig);
 // =====================
 
 /**
- * GET /api/payment/return
- * Handle payment return from Cashfree
- * Query params: order_id, cf_order_id, payment_status, etc.
+ * GET /api/enhanced-payment/return
+ * Handle payment return from Cashfree using new SDK
  */
 router.get('/return', EnhancedPaymentController.handlePaymentReturn);
 
 /**
- * POST /api/payment/webhook
- * Handle webhook notifications from Cashfree
+ * POST /api/enhanced-payment/webhook
+ * Handle webhook notifications from Cashfree using new SDK
  */
 router.post('/webhook', EnhancedPaymentController.handleWebhook);
 
 /**
- * GET /api/payment/checkout/:orderId
- * Server-side redirect to Cashfree payment page
+ * GET /api/enhanced-payment/checkout/:orderId
+ * Server-side redirect to Cashfree payment page using new SDK
  */
 router.get('/checkout/:orderId', EnhancedPaymentController.handleCashfreeCheckout);
 
 /**
- * GET /api/payment/cleanup
- * Get cleanup instructions for frontend
+ * GET /api/enhanced-payment/cleanup
+ * Get cleanup instructions for frontend after payment
  */
 router.get('/cleanup', EnhancedPaymentController.cleanupOrderData);
 
-// Debug & Testing Endpoints
-// =========================
+// Debug & Testing Endpoints for New SDK
+// =====================================
 
 /**
- * GET /api/payment/test
- * Basic API health check
+ * GET /api/enhanced-payment/test
+ * Basic API health check for new SDK
  */
 router.get('/test', (req, res) => {
   res.json({
     success: true,
-    message: 'Enhanced Payment API is working correctly',
-    version: '2025-01-01',
+    message: 'Enhanced Payment API with New Cashfree SDK is working',
+    version: '2022-01-01', // Same API version as PHP
+    sdkType: 'cashfree-pg-sdk-nodejs',
+    compatibility: '100% PHP compatible',
     timestamp: new Date().toISOString(),
     method: req.method,
-    path: req.path,
-    server: 'Enhanced Payment Controller'
+    path: req.path
   });
 });
 
 /**
- * GET /api/payment/debug/environment
- * Get environment information for debugging
+ * GET /api/enhanced-payment/debug/environment
+ * Get environment information for new SDK debugging
  */
 router.get('/debug/environment', EnhancedPaymentController.debugEnvironment);
 
 /**
- * GET /api/payment/debug/api-connection
- * Test API connection to Cashfree
+ * GET /api/enhanced-payment/debug/api-connection
+ * Test API connection to Cashfree using new SDK
  */
 router.get('/debug/api-connection', EnhancedPaymentController.debugApiConnection);
 
 /**
- * GET /api/payment/debug/simulate-return
- * Simulate payment return scenarios for testing
+ * GET /api/enhanced-payment/debug/simulate-return
+ * Simulate payment return scenarios for testing new SDK
  */
 router.get('/debug/simulate-return', (req, res) => {
   const testOrderId = req.query.order_id || `test_order_${Date.now()}`;
@@ -135,60 +199,55 @@ router.get('/debug/simulate-return', (req, res) => {
     {
       scenario: 'Success',
       description: 'Successful payment return',
-      url: `/api/payment/return?order_id=${testOrderId}&cf_order_id=123456&payment_status=SUCCESS&order_status=PAID`
+      url: `/api/enhanced-payment/return?order_id=${testOrderId}&cf_order_id=123456&payment_status=SUCCESS&order_status=PAID`
     },
     {
       scenario: 'Failed',
       description: 'Failed payment return',
-      url: `/api/payment/return?order_id=${testOrderId}&cf_order_id=123456&payment_status=FAILED&order_status=ACTIVE`
+      url: `/api/enhanced-payment/return?order_id=${testOrderId}&cf_order_id=123456&payment_status=FAILED&order_status=ACTIVE`
     },
     {
       scenario: 'Missing Order ID',
       description: 'Return without order ID',
-      url: `/api/payment/return?cf_order_id=123456&payment_status=SUCCESS`
-    },
-    {
-      scenario: 'Different Parameter Format',
-      description: 'Alternative parameter names',
-      url: `/api/payment/return?orderId=${testOrderId}&cfOrderId=123456&paymentStatus=SUCCESS`
+      url: `/api/enhanced-payment/return?cf_order_id=123456&payment_status=SUCCESS`
     }
   ];
   
   res.json({
-    message: 'Payment return simulation endpoints',
+    message: 'Enhanced Payment return simulation (New SDK)',
     testOrderId: testOrderId,
     scenarios: scenarios,
-    instructions: 'Use these URLs to test payment return handling',
-    note: 'These are for testing only - actual returns come from Cashfree'
+    compatibility: 'Same URLs as PHP implementation',
+    instructions: 'Use these URLs to test payment return handling with new SDK'
   });
 });
 
 /**
- * GET /api/payment/debug/test-checkout-redirect
- * Test checkout redirect functionality
+ * GET /api/enhanced-payment/debug/test-checkout-redirect
+ * Test checkout redirect functionality with new SDK
  */
 router.get('/debug/test-checkout-redirect', (req, res) => {
   const testOrderId = req.query.order_id || `test_order_${Date.now()}`;
   
   res.json({
-    message: 'Checkout redirect test',
-    testUrl: `/api/payment/checkout/${testOrderId}`,
+    message: 'Checkout redirect test (New SDK)',
+    testUrl: `/api/enhanced-payment/checkout/${testOrderId}`,
+    phpCompatible: 'Same workflow as PHP implementation',
     instructions: [
-      '1. Create a test order first using /api/payment/create-order',
-      '2. Use the returned order_id in the checkout URL',
-      '3. Visit /api/payment/checkout/{order_id} to test redirect'
+      '1. Create a test order using /api/enhanced-payment/create_order',
+      '2. Use the returned payment_link directly, or',
+      '3. Use /api/enhanced-payment/checkout/{order_id} for server redirect'
     ],
     example: {
-      step1: 'POST /api/payment/create-order with test data',
-      step2: 'GET /api/payment/checkout/{order_id} from response',
-      step3: 'Should redirect to Cashfree payment page'
+      directLink: 'GET /api/enhanced-payment/create_order?amount=100',
+      serverRedirect: 'GET /api/enhanced-payment/checkout/{order_id}'
     }
   });
 });
 
-// Error handling middleware for payment routes
+// Error handling middleware for enhanced payment routes
 router.use((error, req, res, next) => {
-  console.error('❌ Payment API Error:', {
+  console.error('❌ Enhanced Payment API Error (New SDK):', {
     error: error.message,
     stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     path: req.path,
@@ -199,8 +258,9 @@ router.use((error, req, res, next) => {
   res.status(500).json({
     success: false,
     error: {
-      code: 'PAYMENT_API_ERROR',
-      message: 'An error occurred in the payment API',
+      code: 'ENHANCED_PAYMENT_API_ERROR',
+      message: 'An error occurred in the enhanced payment API',
+      sdk: 'cashfree-pg-sdk-nodejs',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
   });

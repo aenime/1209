@@ -448,21 +448,21 @@ const PaymentEnhanced = () => {
         console.warn('⚠️ Cashfree SDK not available, using server redirect');
       }
 
-      // Fallback: Use server-side redirect
-      console.log('🔄 Using server-side redirect fallback...');
-      console.log('🌐 Redirecting to:', `/api/payment-enhanced/checkout/${orderResponse.order_id}`);
+      // Fallback: Use direct payment link from Cashfree
+      console.log('🔄 Using direct payment link fallback...');
+      console.log('🌐 Redirecting to payment link:', orderResponse.payment_link);
       
       // Try multiple fallback approaches
       try {
-        // Method 1: Direct window.location redirect
-        console.log('🔄 Attempting Method 1: Direct redirect...');
-        window.location.href = `/api/payment-enhanced/checkout/${orderResponse.order_id}`;
+        // Method 1: Direct window.location redirect to Cashfree payment link
+        console.log('🔄 Attempting Method 1: Direct payment link redirect...');
+        window.location.href = orderResponse.payment_link;
       } catch (redirectError) {
-        console.error('❌ Direct redirect failed:', redirectError);
+        console.error('❌ Direct payment link redirect failed:', redirectError);
         
-        // Method 2: Use window.open as fallback
-        console.log('🔄 Attempting Method 2: Window.open...');
-        window.open(`/api/payment-enhanced/checkout/${orderResponse.order_id}`, '_self');
+        // Method 2: Use server-side redirect as last resort
+        console.log('🔄 Attempting Method 2: Server redirect...');
+        window.location.href = `/api/payment-enhanced/checkout/${orderResponse.payment_session_id}`;
       }
 
     } catch (error) {
