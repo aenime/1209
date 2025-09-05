@@ -99,7 +99,8 @@ app.use(helmet({
         "https://connect.facebook.net",
         "https://www.google-analytics.com",
         "https://googleads.g.doubleclick.net",
-        "https://www.googleadservices.com"
+        "https://www.googleadservices.com",
+        "https://sdk.cashfree.com"
       ],
       imgSrc: [
         "'self'", 

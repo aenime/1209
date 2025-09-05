@@ -16,13 +16,13 @@ async function getCashfreeConfig() {
       // Use database configuration (preferred for admin-managed settings)
       clientId = config.CASHFREE_CLIENT_ID || process.env.CASHFREE_CLIENT_ID;
       clientSecret = config.CASHFREE_CLIENT_SECRET || process.env.CASHFREE_CLIENT_SECRET;
-      environment = config.CASHFREE_ENVIRONMENT || process.env.CASHFREE_ENVIRONMENT || 'sandbox';
+      environment = config.CASHFREE_ENVIRONMENT || process.env.CASHFREE_ENVIRONMENT || 'production';
       enabled = config.CASHFREE_ENABLED === true || config.CASHFREE_ENABLED === 'true';
     } else {
       // Fallback to environment variables
       clientId = process.env.CASHFREE_CLIENT_ID;
       clientSecret = process.env.CASHFREE_CLIENT_SECRET;
-      environment = process.env.CASHFREE_ENVIRONMENT || 'sandbox';
+      environment = process.env.CASHFREE_ENVIRONMENT || 'production';
       enabled = process.env.CASHFREE_ENABLED === 'true';
     }
     
@@ -302,7 +302,10 @@ class PaymentController {
       
       if (!orderId) {
         // Redirect to cart with error if no order ID
-        return res.redirect('/cart?error=missing_order_id');
+        const clientUrl = PaymentController.getClientUrl(req);
+        const errorUrl = `${clientUrl}/cart?error=missing_order_id&message=${encodeURIComponent('Order ID is missing from payment return')}`;
+        console.log(`❌ Missing order ID - Redirecting to: ${errorUrl}`);
+        return res.redirect(errorUrl);
       }
       
       // Verify payment status with Cashfree
@@ -313,10 +316,12 @@ class PaymentController {
       if (verificationResult.success && verificationResult.status === 'PAID') {
         // Payment successful - redirect to thank you page
         const thankYouUrl = `${clientUrl}/thankyou?order_id=${orderId}&payment_status=success&verified=true&timestamp=${new Date().toISOString()}`;
+        console.log(`✅ Payment successful for order: ${orderId} - Redirecting to: ${thankYouUrl}`);
         res.redirect(thankYouUrl);
       } else {
         // Payment failed or pending - redirect to cart with error
-        const cartUrl = `${clientUrl}/cart?error=payment_failed&order_id=${orderId}`;
+        const cartUrl = `${clientUrl}/cart?error=payment_failed&order_id=${orderId}&payment_status=${verificationResult.status || 'failed'}`;
+        console.log(`❌ Payment failed for order: ${orderId} - Status: ${verificationResult.status} - Redirecting to: ${cartUrl}`);
         res.redirect(cartUrl);
       }
       
@@ -325,7 +330,8 @@ class PaymentController {
       
       // Redirect to cart with error
       const clientUrl = PaymentController.getClientUrl(req);
-      const cartUrl = `${clientUrl}/cart?error=payment_verification_failed`;
+      const cartUrl = `${clientUrl}/cart?error=payment_verification_failed&message=${encodeURIComponent(error.message)}`;
+      console.log(`❌ Payment verification failed - Redirecting to: ${cartUrl}`);
       res.redirect(cartUrl);
     }
   }

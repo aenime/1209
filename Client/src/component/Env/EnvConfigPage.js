@@ -304,23 +304,23 @@ const EnvConfigPage = () => {
       help: 'Enable Cashfree hosted payment page for online payments',
       toggleOptions: { on: true, off: false }
     },
-    CASHFREE_CLIENT_ID: { 
+    CASHFREE_APP_ID: { 
       type: 'text', 
       section: 'Payment', 
-      label: 'Cashfree Client ID',
-      mobileLabel: 'Cashfree Client ID',
+      label: 'Cashfree App ID',
+      mobileLabel: 'Cashfree App ID',
       icon: '🆔',
-      placeholder: 'CF123456ABCDEFGHIJKLMNOP',
-      help: 'Your Cashfree Client ID from the dashboard'
+      placeholder: '104850289018eb5138eb795eac92058401',
+      help: 'Your Cashfree App ID from the production dashboard'
     },
-    CASHFREE_CLIENT_SECRET: { 
+    CASHFREE_SECRET_KEY: { 
       type: 'text', 
       section: 'Payment', 
-      label: 'Cashfree Client Secret',
-      mobileLabel: 'Cashfree Client Secret',
-      icon: '�',
-      placeholder: 'cfsk_ma_test_12345abcdef',
-      help: 'Your Cashfree Client Secret (keep this secure)'
+      label: 'Cashfree Secret Key',
+      mobileLabel: 'Cashfree Secret Key',
+      icon: '🔑',
+      placeholder: 'cfsk_ma_prod_...',
+      help: 'Your Cashfree Secret Key (keep this secure)'
     },
     CASHFREE_ENVIRONMENT: { 
       type: 'select', 
@@ -447,9 +447,9 @@ const EnvConfigPage = () => {
         REACT_APP_COD: '',
         REACT_APP_SIZE: '',
         CASHFREE_ENABLED: false,
-        CASHFREE_CLIENT_ID: '',
-        CASHFREE_CLIENT_SECRET: '',
-        CASHFREE_ENVIRONMENT: 'sandbox',
+        CASHFREE_APP_ID: '',
+        CASHFREE_SECRET_KEY: '',
+        CASHFREE_ENVIRONMENT: 'production',
         REACT_APP_G4: '',
         REACT_APP_FBPIXEL: '',
         REACT_APP_AW: '',
@@ -487,9 +487,9 @@ const EnvConfigPage = () => {
         REACT_APP_COD: '',
         REACT_APP_SIZE: '',
         CASHFREE_ENABLED: false,
-        CASHFREE_CLIENT_ID: '',
-        CASHFREE_CLIENT_SECRET: '',
-        CASHFREE_ENVIRONMENT: 'sandbox',
+        CASHFREE_APP_ID: '',
+        CASHFREE_SECRET_KEY: '',
+        CASHFREE_ENVIRONMENT: 'production',
         REACT_APP_G4: '',
         REACT_APP_FBPIXEL: '',
         REACT_APP_AW: '',
@@ -538,9 +538,9 @@ const EnvConfigPage = () => {
         REACT_APP_COD: '',
         REACT_APP_SIZE: '',
         CASHFREE_ENABLED: false,
-        CASHFREE_CLIENT_ID: '',
-        CASHFREE_CLIENT_SECRET: '',
-        CASHFREE_ENVIRONMENT: 'sandbox',
+        CASHFREE_APP_ID: '',
+        CASHFREE_SECRET_KEY: '',
+        CASHFREE_ENVIRONMENT: 'production',
         REACT_APP_G4: '',
         REACT_APP_FBPIXEL: '',
         REACT_APP_AW: '',

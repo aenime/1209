@@ -36,7 +36,7 @@ Successfully implemented the new Cashfree Node.js SDK integration following the 
 CASHFREE_APP_ID=104850289018eb5138eb795eac92058401
 CASHFREE_SECRET_KEY=cfsk_ma_prod_df3b7f6d9e170f5d5f5b4ac233f4708b_7e8fcd48
 CASHFREE_ENVIRONMENT=PRODUCTION
-APP_BASE_URL=https://deepskyblue-mule-970118.hostingersite.com/failed
+APP_BASE_URL=auto  # Auto-detect from request headers for dynamic environments
 ```
 
 ### 5. **Standalone Server** (`/standalone-cashfree-server.js`)
@@ -218,7 +218,7 @@ Content-Type: application/json
     "customer_phone": "9999999999"
   },
   "order_meta": {
-    "return_url": "https://deepskyblue-mule-970118.hostingersite.com/failed"
+    "return_url": "{SERVER_URL}/api/payment/return"  // Dynamic URL that redirects to {CLIENT_URL}/thankyou on success or {CLIENT_URL}/cart on failure
   }
 }
 ```

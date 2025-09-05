@@ -16,6 +16,7 @@
 
 // Import the new Cashfree service class
 const NewCashfreeService = require('../services/payment/NewCashfreeService.js');
+const { verifyPayment } = require('../services/payment/NewCashfreeService.js');
 
 class EnhancedPaymentController {
   /**
@@ -42,7 +43,8 @@ class EnhancedPaymentController {
         orderAmount: parseFloat(amount),
         customerName: customerName || "John Doe",
         customerEmail: customerEmail || "john.doe@example.com",
-        customerPhone: customerPhone || "9999999999"
+        customerPhone: customerPhone || "9999999999",
+        req: req // Pass request object for dynamic URL detection
       });
       
             // Same JSON response structure as PHP
@@ -140,7 +142,7 @@ class EnhancedPaymentController {
       res.status(200).json({
         success: true,
         enabled: isConfigured,
-        environment: process.env.CASHFREE_ENVIRONMENT || 'sandbox',
+        environment: process.env.CASHFREE_ENVIRONMENT || 'production',
         isConfigured: isConfigured,
         apiVersion: '2022-01-01', // Using same API version as PHP
         sdkType: 'nodejs-official'
@@ -178,7 +180,7 @@ class EnhancedPaymentController {
 
       process.env.CASHFREE_APP_ID = appId;
       process.env.CASHFREE_SECRET_KEY = secretKey;
-      process.env.CASHFREE_ENVIRONMENT = environment || 'sandbox';
+      process.env.CASHFREE_ENVIRONMENT = environment || 'production';
 
       try {
         // Test with a minimal order using new SDK
@@ -229,7 +231,9 @@ class EnhancedPaymentController {
       
       if (!orderId) {
         const clientUrl = EnhancedPaymentController.getClientUrl(req);
-        return res.redirect(`${clientUrl}/cart?error=missing_order_id`);
+        const errorUrl = `${clientUrl}/cart?error=missing_order_id&message=${encodeURIComponent('Order ID is missing from payment return')}`;
+        console.log(`❌ Missing order ID - Redirecting to: ${errorUrl}`);
+        return res.redirect(errorUrl);
       }
       
       // Verify payment status with new Cashfree SDK
@@ -240,12 +244,12 @@ class EnhancedPaymentController {
       if (verificationResult.success && verificationResult.isPaid) {
         // Payment successful - redirect to thank you page
         const successUrl = `${clientUrl}/thankyou?order_id=${orderId}&payment_status=success&verified=true&timestamp=${new Date().toISOString()}`;
-        console.log(`✅ Payment successful for order: ${orderId}`);
+        console.log(`✅ Payment successful for order: ${orderId} - Redirecting to: ${successUrl}`);
         res.redirect(successUrl);
       } else {
         // Payment failed or pending - redirect to cart with error
-        const errorUrl = `${clientUrl}/cart?error=payment_failed&order_id=${orderId}`;
-        console.log(`❌ Payment failed for order: ${orderId} - Status: ${verificationResult.status}`);
+        const errorUrl = `${clientUrl}/cart?error=payment_failed&order_id=${orderId}&payment_status=${verificationResult.status || 'failed'}`;
+        console.log(`❌ Payment failed for order: ${orderId} - Status: ${verificationResult.status} - Redirecting to: ${errorUrl}`);
         res.redirect(errorUrl);
       }
       
@@ -253,7 +257,8 @@ class EnhancedPaymentController {
       console.error('❌ Payment return error:', error);
       
       const clientUrl = EnhancedPaymentController.getClientUrl(req);
-      const errorUrl = `${clientUrl}/cart?error=payment_verification_failed`;
+      const errorUrl = `${clientUrl}/cart?error=payment_verification_failed&message=${encodeURIComponent(error.message)}`;
+      console.log(`❌ Payment verification failed - Redirecting to: ${errorUrl}`);
       res.redirect(errorUrl);
     }
   }
@@ -575,7 +580,7 @@ class EnhancedPaymentController {
           success: true,
           status: 'New Cashfree SDK API connection successful',
           testPaymentLink: testPaymentLink,
-          environment: process.env.CASHFREE_ENVIRONMENT || 'sandbox',
+          environment: process.env.CASHFREE_ENVIRONMENT || 'production',
           apiVersion: '2022-01-01'
         });
       } else {

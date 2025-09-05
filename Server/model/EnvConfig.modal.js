@@ -25,9 +25,9 @@ const envConfigSchema = new mongoose.Schema({
   
   // Cashfree Payment Gateway
   CASHFREE_ENABLED: { type: Boolean, default: false },
-  CASHFREE_CLIENT_ID: { type: String, default: '' },
-  CASHFREE_CLIENT_SECRET: { type: String, default: '' },
-  CASHFREE_ENVIRONMENT: { type: String, default: 'sandbox', enum: ['sandbox', 'production'] },
+  CASHFREE_APP_ID: { type: String, default: '' },
+  CASHFREE_SECRET_KEY: { type: String, default: '' },
+  CASHFREE_ENVIRONMENT: { type: String, default: 'production', enum: ['sandbox', 'production'] },
   
   // Analytics
   REACT_APP_G4: { type: String, default: '' },

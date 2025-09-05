@@ -202,7 +202,7 @@ const getProductionFallbacks = () => {
     CASHFREE_ENABLED: process.env.CASHFREE_ENABLED === 'true' || false,
     CASHFREE_CLIENT_ID: process.env.CASHFREE_CLIENT_ID || "",
     CASHFREE_CLIENT_SECRET: process.env.CASHFREE_CLIENT_SECRET || "",
-    CASHFREE_ENVIRONMENT: process.env.CASHFREE_ENVIRONMENT || "sandbox",
+    CASHFREE_ENVIRONMENT: process.env.CASHFREE_ENVIRONMENT || "production",
     
     
     // Analytics - These are critical for tracking in production
@@ -241,7 +241,7 @@ const getStaticFallbacks = () => {
     CASHFREE_ENABLED: false,
     CASHFREE_CLIENT_ID: "",
     CASHFREE_CLIENT_SECRET: "",
-    CASHFREE_ENVIRONMENT: "sandbox",
+    CASHFREE_ENVIRONMENT: "production",
     
     
     // Analytics
@@ -503,7 +503,7 @@ export const isSizeEnabled = () => envConfig.get('REACT_APP_SIZE') === 'yes';
 export const isCashfreeEnabled = () => envConfig.get('CASHFREE_ENABLED') === true || envConfig.get('CASHFREE_ENABLED') === 'true';
 export const getCashfreeClientId = () => envConfig.get('CASHFREE_CLIENT_ID');
 export const getCashfreeClientSecret = () => envConfig.get('CASHFREE_CLIENT_SECRET');
-export const getCashfreeEnvironment = () => envConfig.get('CASHFREE_ENVIRONMENT') || 'sandbox';
+export const getCashfreeEnvironment = () => envConfig.get('CASHFREE_ENVIRONMENT') || 'production';
 
 export const getGoogleAnalyticsId = () => envConfig.get('REACT_APP_G4');
 export const getFacebookPixelId = () => envConfig.get('REACT_APP_FBPIXEL');

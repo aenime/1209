@@ -24,13 +24,13 @@ class CashfreeService {
         // Use database configuration (preferred for admin-managed settings)
         clientId = config.CASHFREE_CLIENT_ID || process.env.CASHFREE_CLIENT_ID;
         clientSecret = config.CASHFREE_CLIENT_SECRET || process.env.CASHFREE_CLIENT_SECRET;
-        environment = config.CASHFREE_ENVIRONMENT || process.env.CASHFREE_ENVIRONMENT || 'sandbox';
+        environment = config.CASHFREE_ENVIRONMENT || process.env.CASHFREE_ENVIRONMENT || 'production';
         enabled = config.CASHFREE_ENABLED === true || config.CASHFREE_ENABLED === 'true';
       } else {
         // Fallback to environment variables
         clientId = process.env.CASHFREE_CLIENT_ID;
         clientSecret = process.env.CASHFREE_CLIENT_SECRET;
-        environment = process.env.CASHFREE_ENVIRONMENT || 'sandbox';
+        environment = process.env.CASHFREE_ENVIRONMENT || 'production';
         enabled = process.env.CASHFREE_ENABLED === 'true';
       }
       
