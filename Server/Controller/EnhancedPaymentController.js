@@ -226,11 +226,57 @@ class EnhancedPaymentController {
    */
   static async handlePaymentReturn(req, res) {
     try {
-      // Extract order ID from various possible parameter names
-      const orderId = req.query.order_id || req.query.orderId || req.query.ORDER_ID;
+      console.log('🔍 Payment return received with query parameters:', req.query);
+      console.log('🔍 Payment return received with body:', req.body);
       
-      if (!orderId) {
+      // Extract order ID from various possible parameter names
+      const orderId = req.query.order_id || 
+                     req.query.orderId || 
+                     req.query.ORDER_ID ||
+                     req.query.cf_order_id ||
+                     req.query.cfOrderId ||
+                     req.query.order_token ||
+                     req.query.orderToken ||
+                     req.query.reference_id ||
+                     req.query.referenceId ||
+                     req.query.merchant_order_id ||
+                     req.query.merchantOrderId ||
+                     req.body?.order_id ||
+                     req.body?.orderId ||
+                     req.body?.cf_order_id ||
+                     req.body?.reference_id;
+      
+      // Also check for payment session ID which might contain order info
+      const paymentSessionId = req.query.payment_session_id || req.query.paymentSessionId;
+      
+      console.log('🔍 Extracted order ID:', orderId);
+      console.log('🔍 Payment session ID:', paymentSessionId);
+      
+      if (!orderId && !paymentSessionId) {
         const clientUrl = EnhancedPaymentController.getClientUrl(req);
+        
+        // Log all available parameters for debugging
+        console.log('❌ No order ID found. Available parameters:', {
+          query: req.query,
+          body: req.body,
+          headers: req.headers
+        });
+        
+        // Instead of showing error, try to extract from session or redirect to a generic success page
+        const isPaymentSuccess = req.query.payment_status === 'SUCCESS' || 
+                                req.query.status === 'SUCCESS' ||
+                                req.query.payment_status === 'PAID' ||
+                                req.query.status === 'PAID' ||
+                                req.query.order_status === 'PAID' ||
+                                req.body?.payment_status === 'SUCCESS' ||
+                                req.body?.status === 'SUCCESS';
+                                
+        if (isPaymentSuccess) {
+          console.log('🎉 Payment successful but no order ID - redirecting to thankyou');
+          const successUrl = `${clientUrl}/thankyou?payment_status=success&verified=false&timestamp=${new Date().toISOString()}`;
+          return res.redirect(successUrl);
+        }
+        
         const errorUrl = `${clientUrl}/cart?error=missing_order_id&message=${encodeURIComponent('Order ID is missing from payment return')}`;
         console.log(`❌ Missing order ID - Redirecting to: ${errorUrl}`);
         return res.redirect(errorUrl);

@@ -140,6 +140,12 @@ router.post('/test-config', EnhancedPaymentController.testCashfreeConfig);
 router.get('/return', EnhancedPaymentController.handlePaymentReturn);
 
 /**
+ * POST /api/enhanced-payment/return
+ * Handle payment return from Cashfree using new SDK (for POST requests)
+ */
+router.post('/return', EnhancedPaymentController.handlePaymentReturn);
+
+/**
  * POST /api/enhanced-payment/webhook
  * Handle webhook notifications from Cashfree using new SDK
  */
