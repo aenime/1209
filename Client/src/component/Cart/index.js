@@ -2,7 +2,7 @@
  * React Core and Navigation Imports
  */
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 
 /**
  * Context Hooks
@@ -62,6 +62,7 @@ const Cart = () => {
   // Navigation and location hooks
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   
   /**
    * Cart Context Data and Functions
@@ -99,9 +100,62 @@ const Cart = () => {
   const [paymentStatusMessage, setPaymentStatusMessage] = useState(null);
 
   /**
-   * Handle payment return status messages
+   * Handle payment return status messages from location.state and URL parameters
    */
   useEffect(() => {
+    // Handle URL parameters from payment return (e.g., ?error=missing_order_id&message=...)
+    const urlError = searchParams.get('error');
+    const urlMessage = searchParams.get('message');
+    const paymentStatus = searchParams.get('payment_status');
+    
+    if (urlError || paymentStatus === 'failed') {
+      let statusMessage = {
+        type: 'error',
+        title: 'Payment Issue',
+        text: 'There was an issue with your payment'
+      };
+      
+      // Handle specific error types from backend
+      if (urlError === 'missing_order_id') {
+        statusMessage = {
+          type: 'error',
+          title: 'Payment Processing Error',
+          text: urlMessage ? decodeURIComponent(urlMessage) : 'Order ID is missing from payment return. Please try placing your order again.'
+        };
+      } else if (urlError === 'payment_failed') {
+        statusMessage = {
+          type: 'error', 
+          title: 'Payment Failed',
+          text: urlMessage ? decodeURIComponent(urlMessage) : 'Your payment could not be processed. Please try again.'
+        };
+      } else if (urlError === 'payment_verification_failed') {
+        statusMessage = {
+          type: 'error',
+          title: 'Payment Verification Failed', 
+          text: urlMessage ? decodeURIComponent(urlMessage) : 'Payment verification failed. Please contact support if amount was deducted.'
+        };
+      } else if (urlMessage) {
+        statusMessage.text = decodeURIComponent(urlMessage);
+      }
+      
+      setPaymentStatusMessage(statusMessage);
+      
+      // Clean up URL parameters after showing the message
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.delete('error');
+      newUrl.searchParams.delete('message');
+      newUrl.searchParams.delete('payment_status');
+      window.history.replaceState(null, '', newUrl.pathname);
+      
+      // Auto-hide message after 10 seconds for URL errors
+      setTimeout(() => {
+        setPaymentStatusMessage(null);
+      }, 10000);
+      
+      return; // Don't process location.state if we handled URL params
+    }
+    
+    // Handle location.state messages (existing functionality)
     if (location.state) {
       const { paymentFailed, paymentError, paymentTimeout, message, reason } = location.state;
       
@@ -133,7 +187,7 @@ const Cart = () => {
         }, 8000);
       }
     }
-  }, [location.state]);
+  }, [location.state, searchParams]);
 
   /**
    * Fetch recommendations for cart page

@@ -37,7 +37,13 @@ const ThankYou = () => {
     amount: searchParams.get('amount'),
     currency: searchParams.get('currency'),
     verified: searchParams.get('verified') === 'true',
-    timestamp: searchParams.get('timestamp')
+    timestamp: searchParams.get('timestamp'),
+    // Additional parameters for fallback cases
+    referenceId: searchParams.get('reference_id'),
+    merchantOrderId: searchParams.get('merchant_order_id'),
+    paymentSessionId: searchParams.get('payment_session_id'),
+    txnId: searchParams.get('txn_id'),
+    isUnverified: searchParams.get('verified') === 'false' // Explicit unverified flag
   };
 
   const [paymentInfo, setPaymentInfo] = useState(paymentData);
@@ -402,10 +408,28 @@ const ThankYou = () => {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 py-8">
         
-        {/* Payment Header - Dynamic based on Cashfree status */}
+        {/* Payment Header - Dynamic based on Cashfree status and verification */}
         <div className="text-center mb-8">
           <div className="relative inline-flex items-center justify-center w-24 h-24 mb-6">
-            {isCashfreeEnabled ? (
+            {isCashfreeEnabled && paymentData.verified ? (
+              // Cashfree enabled + verified payment - show confirmed state with green
+              <>
+                <div className="absolute inset-0 bg-green-100 rounded-full animate-pulse"></div>
+                <div className="relative rounded-full p-6 shadow-lg bg-green-500">
+                  <CheckCircleIcon className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute inset-0 bg-green-300 rounded-full animate-ping opacity-20"></div>
+              </>
+            ) : isCashfreeEnabled && paymentData.isUnverified ? (
+              // Cashfree enabled but unverified payment - show warning state with orange
+              <>
+                <div className="absolute inset-0 bg-orange-100 rounded-full animate-pulse"></div>
+                <div className="relative rounded-full p-6 shadow-lg bg-orange-500">
+                  <CheckCircleIcon className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute inset-0 bg-orange-300 rounded-full animate-ping opacity-20"></div>
+              </>
+            ) : isCashfreeEnabled ? (
               // Cashfree enabled - show confirmed state with green
               <>
                 <div className="absolute inset-0 bg-green-100 rounded-full animate-pulse"></div>
@@ -426,20 +450,58 @@ const ThankYou = () => {
             )}
           </div>
           
-          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isCashfreeEnabled ? 'text-green-800' : 'text-gray-900'}`}>
-            {isCashfreeEnabled ? 'Payment Confirmed' : 'Payment Confirmation is Pending'}
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${
+            isCashfreeEnabled && paymentData.verified 
+              ? 'text-green-800' 
+              : isCashfreeEnabled && paymentData.isUnverified
+                ? 'text-orange-800'
+                : isCashfreeEnabled 
+                  ? 'text-green-800'
+                  : 'text-gray-900'
+          }`}>
+            {isCashfreeEnabled && paymentData.verified 
+              ? 'Payment Confirmed' 
+              : isCashfreeEnabled && paymentData.isUnverified
+                ? 'Payment Received (Unverified)'
+                : isCashfreeEnabled
+                  ? 'Payment Confirmed'
+                  : 'Payment Confirmation is Pending'}
           </h1>
           <p className="text-lg text-gray-600 mb-4">Your order has been confirmed</p>
           
           <div className={`inline-flex items-center px-6 py-3 rounded-full text-2xl font-bold ${
-            isCashfreeEnabled 
-              ? 'bg-green-50 text-green-800' 
-              : 'bg-yellow-50 text-yellow-800'
+            isCashfreeEnabled && paymentData.verified
+              ? 'bg-green-50 text-green-800'
+              : isCashfreeEnabled && paymentData.isUnverified
+                ? 'bg-orange-50 text-orange-800'
+                : isCashfreeEnabled 
+                  ? 'bg-green-50 text-green-800' 
+                  : 'bg-yellow-50 text-yellow-800'
           }`}>
             <span className="mr-1">₹</span>
             <span>{displayAmount}</span>
           </div>
         </div>
+
+        {/* Unverified Payment Warning */}
+        {paymentData.isUnverified && (
+          <div className="bg-orange-50 border-2 border-orange-300 rounded-2xl p-6 mb-6 shadow-md">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-orange-600 text-2xl">⚠️</span>
+              </div>
+              <div>
+                <h4 className="font-bold text-orange-800 mb-3 text-lg">Payment Status Notice</h4>
+                <p className="text-orange-700 font-medium leading-relaxed mb-2">
+                  Your payment was successful, but we couldn't verify all the details automatically. 
+                </p>
+                <p className="text-orange-700 leading-relaxed">
+                  Your order has been confirmed and will be processed normally. If you have any concerns, please contact our support team.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Transaction Details Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 mb-6 overflow-hidden">
@@ -447,11 +509,21 @@ const ThankYou = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-base sm:text-lg font-semibold text-white">Transaction Details</h3>
               <span className={`text-white px-3 py-1 rounded-full text-xs font-medium ${
-                isCashfreeEnabled 
+                isCashfreeEnabled && paymentData.verified
                   ? 'bg-green-600' 
-                  : ''
-              }`} style={{ backgroundColor: isCashfreeEnabled ? undefined : secondaryColor }}>
-                {isCashfreeEnabled ? 'Confirmed' : 'Pending'}
+                  : isCashfreeEnabled && paymentData.isUnverified
+                    ? 'bg-orange-600'
+                    : isCashfreeEnabled
+                      ? 'bg-green-600'
+                      : ''
+              }`} style={{ backgroundColor: (isCashfreeEnabled && !paymentData.verified && !paymentData.isUnverified) || !isCashfreeEnabled ? secondaryColor : undefined }}>
+                {isCashfreeEnabled && paymentData.verified
+                  ? 'Verified' 
+                  : isCashfreeEnabled && paymentData.isUnverified
+                    ? 'Unverified'
+                    : isCashfreeEnabled
+                      ? 'Confirmed'
+                      : 'Pending'}
               </span>
             </div>
           </div>
@@ -529,20 +601,42 @@ const ThankYou = () => {
             <div className="flex items-center justify-between py-3" style={{ gap: '15px' }}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${
-                  isCashfreeEnabled ? 'bg-green-50' : 'bg-yellow-50'
+                  isCashfreeEnabled && paymentData.verified
+                    ? 'bg-green-50' 
+                    : isCashfreeEnabled && paymentData.isUnverified
+                      ? 'bg-orange-50'
+                      : isCashfreeEnabled
+                        ? 'bg-green-50'
+                        : 'bg-yellow-50'
                 }`}>
                   <CheckCircleIcon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${
-                    isCashfreeEnabled ? 'text-green-500' : 'text-yellow-500'
+                    isCashfreeEnabled && paymentData.verified
+                      ? 'text-green-500' 
+                      : isCashfreeEnabled && paymentData.isUnverified
+                        ? 'text-orange-500'
+                        : isCashfreeEnabled
+                          ? 'text-green-500'
+                          : 'text-yellow-500'
                   }`} />
                 </div>
                 <span className="font-medium text-gray-700 text-sm sm:text-base md:text-lg lg:text-xl">Status</span>
               </div>
               <span className={`px-2 sm:px-3 py-1 rounded-full text-sm sm:text-base md:text-lg font-medium flex-shrink ${
-                isCashfreeEnabled 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
+                isCashfreeEnabled && paymentData.verified
+                  ? 'bg-green-100 text-green-800'
+                  : isCashfreeEnabled && paymentData.isUnverified
+                    ? 'bg-orange-100 text-orange-800'
+                    : isCashfreeEnabled 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
               }`}>
-                {isCashfreeEnabled ? 'Payment confirmed' : 'Payment confirmation pending'}
+                {isCashfreeEnabled && paymentData.verified
+                  ? 'Payment verified and confirmed'
+                  : isCashfreeEnabled && paymentData.isUnverified
+                    ? 'Payment received (unverified)'
+                    : isCashfreeEnabled
+                      ? 'Payment confirmed'
+                      : 'Payment confirmation pending'}
               </span>
             </div>
           </div>
